@@ -1,0 +1,55 @@
+# ----------------------------
+# Stage 1: Base Image
+# ----------------------------
+FROM python:3.11-slim AS base
+
+# Prevents Python from writing .pyc files and buffers stdout/stderr
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+# Set working directory
+WORKDIR /code
+
+# ----------------------------
+# Stage 2: System dependencies
+# ----------------------------
+# Install system packages required by Prophet, psycopg2, and others
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libpq-dev \
+    gcc \
+    g++ \
+    libffi-dev \
+    libssl-dev \
+    python3-dev \
+    git \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# ----------------------------
+# Stage 3: Install Python packages
+# ----------------------------
+COPY requirements.txt /code/
+
+RUN pip install --upgrade pip
+RUN pip install -r requirements.txt
+
+# ----------------------------
+# Stage 4: Copy application files
+# ----------------------------
+COPY app /code/app
+
+# ----------------------------
+# Stage 5: Environment setup
+# ----------------------------
+# Default environment variables (can be overridden via .env)
+ENV API_HOST=0.0.0.0
+ENV API_PORT=8000
+
+# ----------------------------
+# Stage 6: Expose and run
+# ----------------------------
+EXPOSE 8000
+
+# Run FastAPI app with Uvicorn
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
