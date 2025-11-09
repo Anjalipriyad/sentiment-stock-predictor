@@ -1,32 +1,53 @@
-# 📈 Sentiment Stock Predictor
+# ⚡ Sentiment-Based Stock Prediction System
 
-## Overview
-**Sentiment Stock Predictor** is an end-to-end machine learning web application that:
-- Collects real-time stock prices and financial news from multiple sources (Google News, Twitter, etc.).
-- Performs **sentiment analysis** on textual data using transformer models like **FinBERT**.
-- Combines sentiment features with historical prices to **forecast next-week stock trends**.
-- Displays results on an interactive **frontend dashboard** with charts, news feeds, and sentiment graphs.
+> *"Merging financial data, public sentiment, and AI to see tomorrow’s market today."*
 
----
+A full-stack **stock prediction platform** that combines **sentiment analysis**, **time-series learning**, and a **hybrid RF + LSTM model** to forecast both **next-day stock prices** and **market direction (UP/DOWN)**.
 
-## 🚀 Features
-- Fetches live stock and news data using APIs (e.g., Yahoo Finance, NewsAPI).
-- Applies sentiment analysis using VADER and FinBERT.
-- Predicts 7-day stock prices using ML (Prophet / LSTM).
-- React-based frontend dashboard with price charts, sentiment trends, and news display.
-- Modular FastAPI backend and containerized deployment using Docker.
+Built with **FastAPI**, **React**, and **SQLAlchemy**, the system demonstrates the power of combining traditional machine-learning methods with deep-learning architectures for financial forecasting.
 
 ---
 
-## 🏗️ Project Structure
-sentiment-stock-predictor/
-│
-├── backend/ # FastAPI backend (data, ML, API)
-├── frontend/ # React frontend (UI)
-├── data/ # Raw, processed, and prediction data
-├── scripts/ # Data collection & model training scripts
-├── notebooks/ # Jupyter notebooks for experiments
-├── docker-compose.yml # Multi-container setup
-├── .env.example # Environment variable template
-├── LICENSE # Open-source license
-└── README.md # Project documentation
+## 🌟 Key Highlights
+
+- 🧠 **Hybrid RF + LSTM Stacking**  
+  A custom ensemble that fuses Random Forest’s interpretability with LSTM’s temporal memory for more robust direction prediction.
+
+- 💸 **Dual Prediction System**  
+  - Predicts **Next-Day Closing Price** (via the best regression model).  
+  - Predicts **Direction (UP/DOWN)** via the **RF + LSTM stack**.
+
+- 📈 **Interactive Visualization**  
+  The frontend renders an intuitive **price chart** that extends historical prices with the predicted next-day point.
+
+- 🧩 **End-to-End Architecture**  
+  From data ingestion → ML pipeline → REST API → visualization — all components are seamlessly integrated.
+
+- 💾 **Persistent Storage**  
+  Every prediction (ticker, model used, predicted direction & price) is saved for history tracking and analysis.
+
+
+---
+
+## ⚙️ Technologies Used
+
+### 🧠 Machine Learning
+- **Random Forest (RF)** – captures nonlinear patterns in market features.  
+- **Long Short-Term Memory (LSTM)** – learns temporal dependencies from past prices.  
+- **Stacked Ensemble** – combines both models for final direction prediction.  
+- **LightGBM / XGBoost / CatBoost** – evaluated as potential price regression models.  
+- **Pandas / NumPy / Scikit-learn / TensorFlow** – ML workflow backbone.
+
+### 💻 Backend
+- **FastAPI** – for high-performance async REST endpoints.  
+- **SQLAlchemy ORM** – to persist predictions in a relational DB.  
+- **Uvicorn** – lightweight ASGI server for deployment.
+
+### 🎨 Frontend
+- **React + TypeScript** – modular, fast, and maintainable.  
+- **Recharts** – clean visualization of price predictions.  
+- **Axios** – communication with backend API.  
+- **Vite** – blazing fast frontend build tool.
+
+
+
