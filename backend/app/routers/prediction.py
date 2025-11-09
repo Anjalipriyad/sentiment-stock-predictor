@@ -38,6 +38,7 @@ def predict_stock(ticker: str, db: Session = Depends(get_db)):
             "predicted_price": results.get("predicted_price"),
             "predicted_direction": results.get("predicted_direction"),  # ✅ stacked direction
             "metrics": results.get("price_metrics"),
+            "dir_metrics": results.get("direction_metrics"),
             "message": "✅ Prediction saved successfully."
         }
 

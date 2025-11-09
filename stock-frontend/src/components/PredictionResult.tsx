@@ -51,40 +51,41 @@ type PriceMetrics = {
   R2?: number;
 };
 
-type ModelMetrics = DirectionMetrics & PriceMetrics;
-
 // --------- Component ----------
 const PredictionResult: React.FC<Props> = ({ prediction, historicalData }) => {
   if (!prediction) return null;
 
-  // Prepare chart data
   const chartData = prepareChartData(historicalData, prediction.predicted_price ?? 0);
 
-  // Get metrics for the best model safely
-  const modelMetrics: ModelMetrics =
-    prediction.metrics?.[prediction.best_model as keyof typeof prediction.metrics] || {};
-  console.log("Model Metrics:", prediction);
+  // ✅ Direction metrics now come from dir_metrics (stacking)
+  const directionMetrics: DirectionMetrics = prediction.dir_metrics || {};
+
+  // ✅ Price metrics come from the best model
+  const priceMetrics: PriceMetrics =
+    prediction.metrics?.[prediction.best_model as keyof typeof prediction.metrics] as PriceMetrics || {};
+
   return (
     <div style={{ padding: "2rem" }}>
       <h2>{prediction.ticker ?? "Ticker"} Prediction</h2>
-      <p><strong>Best Model:</strong> {prediction.best_model?.toUpperCase() || "N/A"}</p>
+      <p><strong>Best Model (Price):</strong> {prediction.best_model?.toUpperCase() || "N/A"}</p>
+      <p><strong>Direction Model:</strong> RF_LSTM Stacking</p>
       <p><strong>Predicted Direction:</strong> {prediction.predicted_direction?.toUpperCase() || "N/A"}</p>
       <p><strong>Predicted Next-Day Price:</strong> ${prediction.predicted_price?.toFixed(2) ?? "N/A"}</p>
 
       <h3>Direction Metrics</h3>
       <ul>
-        <li>Accuracy: {modelMetrics.accuracy?.toFixed(2) ?? "N/A"}</li>
-        <li>Precision: {modelMetrics.precision?.toFixed(2) ?? "N/A"}</li>
-        <li>Recall: {modelMetrics.recall?.toFixed(2) ?? "N/A"}</li>
-        <li>F1: {modelMetrics.f1?.toFixed(2) ?? "N/A"}</li>
+        <li>Accuracy: {directionMetrics.accuracy?.toFixed(2) ?? "N/A"}</li>
+        <li>Precision: {directionMetrics.precision?.toFixed(2) ?? "N/A"}</li>
+        <li>Recall: {directionMetrics.recall?.toFixed(2) ?? "N/A"}</li>
+        <li>F1: {directionMetrics.f1?.toFixed(2) ?? "N/A"}</li>
       </ul>
 
       <h3>Price Metrics</h3>
       <ul>
         <li>
-          RMSE: {modelMetrics.RMSE?.toFixed(2) ?? "N/A"}, 
-          MAE: {modelMetrics.MAE?.toFixed(2) ?? "N/A"}, 
-          R2: {modelMetrics.R2?.toFixed(2) ?? "N/A"}
+          RMSE: {priceMetrics.RMSE?.toFixed(2) ?? "N/A"}, 
+          MAE: {priceMetrics.MAE?.toFixed(2) ?? "N/A"}, 
+          R2: {priceMetrics.R2?.toFixed(2) ?? "N/A"}
         </li>
       </ul>
 
@@ -95,7 +96,7 @@ const PredictionResult: React.FC<Props> = ({ prediction, historicalData }) => {
           <XAxis dataKey="date" />
           <YAxis domain={["auto","auto"]} />
           <Tooltip
-            formatter={(value: any, name: any, props: any) => [
+            formatter={(value: any, _name: any, props: any) => [
               value,
               props.payload.predicted ? "Predicted" : "Actual",
             ]}

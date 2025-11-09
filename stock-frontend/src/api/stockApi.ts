@@ -10,6 +10,7 @@ export const getAllTickers = (): string[] => [
 ];
 
 // ---------- Prediction Result Type ----------
+// ---------- Prediction Result Type ----------
 export interface PredictionResult {
   id?: number;
   ticker: string;
@@ -18,19 +19,25 @@ export interface PredictionResult {
   predicted_direction: string;
   created_at?: string;
 
-  direction_accuracy?: number;
-  direction_precision?: number;
-  direction_recall?: number;
-  direction_f1?: number;
+  // Price metrics (legacy)
   price_mae?: number;
   price_rmse?: number;
   price_r2?: number;
 
+  // ✅ Direction + Price metrics from backend
   metrics?: {
-    random_forest?: { RMSE: number; MAE: number; R2: number; accuracy?: number; precision?: number; recall?: number; f1?: number };
+    random_forest?: { RMSE: number; MAE: number; R2: number };
     lstm?: { RMSE: number; MAE: number; R2: number };
   };
+
+  dir_metrics?: {
+    accuracy?: number;
+    precision?: number;
+    recall?: number;
+    f1?: number;
+  };
 }
+
 
 const BASE_URL = "http://localhost:8000";
 
