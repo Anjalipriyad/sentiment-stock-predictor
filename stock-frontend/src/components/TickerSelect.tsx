@@ -1,4 +1,3 @@
-// src/components/TickerSelect.tsx
 import React, { useState } from "react";
 import { getAllTickers, fetchPrediction } from "../api/stockApi";
 import type { PredictionResult } from "../api/stockApi";
@@ -11,7 +10,7 @@ const TickerSelect: React.FC<TickerSelectProps> = ({ onPredictionFetched }) => {
   const allTickers = getAllTickers();
   const [search, setSearch] = useState<string>("");
   const [filteredTickers, setFilteredTickers] = useState<string[]>(allTickers);
-  const [selectedTicker, setSelectedTicker] = useState<string>(""); 
+  const [selectedTicker, setSelectedTicker] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -27,9 +26,9 @@ const TickerSelect: React.FC<TickerSelectProps> = ({ onPredictionFetched }) => {
     setError(null);
     try {
       const prediction: PredictionResult = await fetchPrediction(ticker);
-      onPredictionFetched(prediction);
+      if (prediction) onPredictionFetched(prediction);
     } catch (err: any) {
-      setError(err.message);
+      setError(err?.message || "Failed to fetch prediction");
     } finally {
       setLoading(false);
     }

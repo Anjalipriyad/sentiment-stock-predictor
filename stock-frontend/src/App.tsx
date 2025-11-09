@@ -1,4 +1,3 @@
-// src/App.tsx
 import React, { useState } from "react";
 import TickerSelect from "./components/TickerSelect";
 import PredictionResult from "./components/PredictionResult";
@@ -13,35 +12,33 @@ const App: React.FC = () => {
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // When user selects a ticker and prediction is fetched
   const handlePredictionFetched = async (pred: PredictionResultType) => {
+    if (!pred) return;
     setPrediction(pred);
     setLoadingHistory(true);
     setError(null);
 
     try {
-      // Fetch historical data + predicted price for chart
       const history: PredictionResultType[] = await fetchPredictionHistory(pred.ticker);
 
-      // Transform backend data to HistoricalPrice[]
-      const historical: HistoricalPrice[] = history.map((item) => ({
+      const historical: HistoricalPrice[] = (history || []).map((item) => ({
         date: item.created_at || new Date().toISOString(),
-        close: item.predicted_price,
+        close: item.predicted_price ?? 0,
         predicted: false,
       }));
 
-      // Add latest predicted price as predicted
-      const lastDate = new Date(historical[historical.length - 1]?.date);
+      const lastDate = new Date(historical[historical.length - 1]?.date || new Date());
       lastDate.setDate(lastDate.getDate() + 1);
       historical.push({
         date: lastDate.toISOString().split("T")[0],
-        close: pred.predicted_price,
+        close: pred.predicted_price ?? 0,
         predicted: true,
       });
 
       setHistoricalData(historical);
     } catch (err: any) {
       setError(err.message || "Failed to fetch historical data");
+      setHistoricalData([{ date: new Date().toISOString(), close: pred.predicted_price ?? 0, predicted: true }]);
     } finally {
       setLoadingHistory(false);
     }
@@ -51,31 +48,18 @@ const App: React.FC = () => {
     <div className="app-container" style={{ fontFamily: "Arial, sans-serif", padding: "2rem" }}>
       <h1 style={{ textAlign: "center", marginBottom: "2rem" }}>📈 Stock Market Predictor</h1>
 
-      {!prediction && (
+      {!prediction ? (
         <div style={{ maxWidth: "500px", margin: "0 auto" }}>
           <TickerSelect onPredictionFetched={handlePredictionFetched} />
         </div>
-      )}
-
-      {prediction && (
+      ) : (
         <div style={{ marginTop: "2rem" }}>
-          {loadingHistory ? (
-            <p>Loading historical data...</p>
-          ) : error ? (
-            <p style={{ color: "red" }}>{error}</p>
-          ) : (
-            <PredictionResult
-              prediction={prediction}
-              historicalData={historicalData}
-            />
-          )}
-
+          {loadingHistory && <p>Loading historical data...</p>}
+          {error && <p style={{ color: "red" }}>{error}</p>}
+          <PredictionResult prediction={prediction} historicalData={historicalData} />
           <div style={{ marginTop: "2rem", textAlign: "center" }}>
             <button
-              onClick={() => {
-                setPrediction(null);
-                setHistoricalData([]);
-              }}
+              onClick={() => { setPrediction(null); setHistoricalData([]); setError(null); }}
               style={{
                 padding: "0.5rem 1rem",
                 fontSize: "1rem",

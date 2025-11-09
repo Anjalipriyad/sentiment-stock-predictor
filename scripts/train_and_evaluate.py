@@ -212,7 +212,7 @@ def train_price_models(df):
     lstm_metrics={"RMSE":lstm_rmse,"MAE":lstm_mae,"R2":lstm_r2}
 
     # Pick better model (lower RMSE)
-    best_model="rf" if rf_rmse<lstm_rmse else "lstm"
+    best_model="random_forest" if rf_rmse<lstm_rmse else "lstm"
     last_seq=X_scaled[-seq_len:].reshape(1,seq_len,X_scaled.shape[1])
     next_price=float(model.predict(last_seq)[0][0]) if best_model=="lstm" else float(rf.predict([X.iloc[-1]])[0])
 

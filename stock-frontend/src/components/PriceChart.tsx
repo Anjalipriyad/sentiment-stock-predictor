@@ -9,10 +9,15 @@ import {
   Tooltip,
   CartesianGrid,
 } from "recharts";
-import type { HistoricalPrice } from "../types"; // import type from centralized types
+
+interface PricePoint {
+  date: string;
+  close: number;
+  predicted: boolean;
+}
 
 interface PriceChartProps {
-  data: HistoricalPrice[]; // use HistoricalPrice from types
+  data: PricePoint[];
 }
 
 const PriceChart: React.FC<PriceChartProps> = ({ data }) => {
@@ -33,12 +38,13 @@ const PriceChart: React.FC<PriceChartProps> = ({ data }) => {
             type="monotone"
             dataKey="close"
             stroke="#8884d8"
-            dot={(point: any) => {
-              if (point && point.payload.predicted) {
-                return <circle r={4} fill="red" stroke="red" />;
-              }
-              return <circle r={4} fill="blue" stroke="blue" />;
-            }}
+            dot={(point: any) =>
+              point && point.payload.predicted ? (
+                <circle r={4} fill="red" stroke="red" />
+              ) : (
+                <circle r={4} fill="blue" stroke="blue" />
+              )
+            }
             activeDot={{ r: 6 }}
           />
         </LineChart>
