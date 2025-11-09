@@ -49,5 +49,8 @@ Built with **FastAPI**, **React**, and **SQLAlchemy**, the system demonstrates t
 - **Axios** – communication with backend API.  
 - **Vite** – blazing fast frontend build tool.
 
+<img width="902" height="841" alt="image" src="https://github.com/user-attachments/assets/d4806af2-3413-4281-ad89-dbe8176f494e" />
+<img width="710" height="872" alt="image" src="https://github.com/user-attachments/assets/40bab3a9-c6e0-47e5-9b0a-7cb3356d1a44" />
+
 
 
