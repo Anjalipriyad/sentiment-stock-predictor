@@ -5,39 +5,44 @@ import yfinance as yf
 import pandas as pd
 import feedparser
 from backend.app.routers.sentiment import get_bert_sentiment_features
-
+from backend.app.config import settings
+import requests
+import pandas as pd
 router = APIRouter(
     prefix="/fetch",
     tags=["FetchData"]
 )
 
 @router.get("/{ticker}")
-async def fetch_stock_data(ticker: str, years: int = 3):
-    """
-    Fetch historical stock data (OHLCV) for the given ticker.
-    """
-    try:
-        end = pd.Timestamp.today()
-        start = end - pd.Timedelta(days=years*365)
-        df = yf.download(ticker, start=start, end=end, progress=False)
-        df.reset_index(inplace=True)
-
-        if isinstance(df.columns, pd.MultiIndex):
-            df.columns = [col[0] for col in df.columns]
-
-        # Convert dates to string for JSON serialization
-        df['Date'] = df['Date'].astype(str)
-
-        return {
-            "status": "success",
-            "ticker": ticker,
-            "data": df.to_dict(orient="records")
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/{ticker}/news")
+
+def fetch_stock_data(ticker: str, years=2):
+    url = "https://finnhub.io/api/v1/stock/candle"
+
+    params = {
+        "symbol": ticker,
+        "resolution": "D",
+        "count": 500,
+        "token": settings.FINNHUB_API_KEY  # ✅ from .env
+    }
+
+    response = requests.get(url, params=params)
+    data = response.json()
+
+    if data.get("s") != "ok":
+        raise Exception(f"Finnhub error: {data}")
+
+    df = pd.DataFrame({
+        "Date": pd.to_datetime(data["t"], unit="s"),
+        "Open": data["o"],
+        "High": data["h"],
+        "Low": data["l"],
+        "Close": data["c"],
+        "Volume": data["v"]
+    })
+
+    return df
 async def fetch_news(ticker: str, count: int = 10):
     """
     Fetch latest news headlines for a ticker using Google News RSS feed.

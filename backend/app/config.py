@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     API_HOST: str = "0.0.0.0"
     API_PORT: int = 8000
     LOG_LEVEL: str = "info"
-
+    FINNHUB_API_KEY: str | None = None
     # -----------------------------
     # Database Configuration
     # -----------------------------
@@ -53,7 +53,7 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"        # Automatically load from .env
         env_file_encoding = "utf-8"
-
+        extra = "allow" 
 
 @lru_cache()
 def get_settings() -> Settings:

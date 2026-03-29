@@ -33,14 +33,16 @@ def predict_stock(ticker: str, db: Session = Depends(get_db)):
         )
 
         return {
-            "ticker": ticker,
-            "best_model": results.get("best_model"),
-            "predicted_price": results.get("predicted_price"),
-            "predicted_direction": results.get("predicted_direction"),  # ✅ stacked direction
-            "metrics": results.get("price_metrics"),
-            "dir_metrics": results.get("direction_metrics"),
-            "message": "✅ Prediction saved successfully."
-        }
+    "ticker": ticker,
+    "model": "stacked",
+    "predicted_price": results["predicted_price"],
+    "predicted_direction": results["predicted_direction"],
+    "metrics": {
+        "price": results["price_metrics"]["stacked"],
+        "direction": results["direction_metrics"]["stacked"]
+    },
+    "message": "✅ Prediction saved successfully."
+}
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

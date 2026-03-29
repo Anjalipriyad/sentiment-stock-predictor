@@ -19,18 +19,19 @@ def create_prediction(
     Inserts a prediction result into the database.
     Saves direction metrics from the stacked LSTM model instead of RF.
     """
-    lstm_metrics = direction_metrics.get("lstm_stacked", {})
+    stacked_metrics = direction_metrics.get("stacked", {})
 
     new_record = models.PredictionResult(
         ticker=ticker,
         best_model=best_model,
-        direction_accuracy=float(lstm_metrics.get("accuracy", 0)),
-        direction_precision=float(lstm_metrics.get("precision", 0)),
-        direction_recall=float(lstm_metrics.get("recall", 0)),
-        direction_f1=float(lstm_metrics.get("f1", 0)),
-        price_mae=float(price_metrics.get("random_forest", {}).get("MAE", 0)),  # keep price metrics from RF
-        price_rmse=float(price_metrics.get("random_forest", {}).get("RMSE", 0)),
-        price_r2=float(price_metrics.get("random_forest", {}).get("R2", 0)),
+        direction_accuracy=float(stacked_metrics.get("accuracy", 0)),
+        direction_precision=float(stacked_metrics.get("precision", 0)),
+        direction_recall=float(stacked_metrics.get("recall", 0)),
+        direction_f1=float(stacked_metrics.get("f1", 0)),
+        price_mae=float(price_metrics.get("stacked", {}).get("MAE", 0)),
+        price_rmse=float(price_metrics.get("stacked", {}).get("RMSE", 0)),
+        price_r2=float(price_metrics.get("stacked", {}).get("R2", 0)),
+    
         predicted_price=float(predicted_price),
         predicted_direction=predicted_direction,
         metrics_json={

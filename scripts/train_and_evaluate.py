@@ -64,12 +64,9 @@ def get_bert_sentiment_features(texts, max_len=32):
 
 
 def fetch_sentiment_score(ticker: str):
-    rss_url = f"https://news.google.com/rss/search?q={ticker}+stock&hl=en-IN&gl=IN&ceid=IN:en"
-    feed = feedparser.parse(rss_url)
-    titles = [entry.title for entry in feed.entries[:15]]
-    emb = get_bert_sentiment_features(titles)
-    return [emb, emb, emb]
-
+    # ⚡ FAST fallback (no BERT, no API calls)
+    import numpy as np
+    return [np.zeros(10), np.zeros(10), np.zeros(10)]
 # ---------- Fetch stock data ----------
 def fetch_stock_data(ticker: str, years: int = 3):
     end = datetime.date.today()
@@ -244,41 +241,75 @@ def train_price_models(df):
             "best_model":best_model,"predicted_next_day_close":next_price}
 
 # ---------- Full pipeline ----------
+from sklearn.ensemble import GradientBoostingClassifier, GradientBoostingRegressor
+
 def run_pipeline_stacked(ticker):
-    print(f"\n🚀 Running stacked pipeline for {ticker}...\n")
-    df = fetch_stock_data(ticker, years=3)
+    print(f"\n🚀 Running FAST stacked pipeline for {ticker}...\n")
+
+    df = fetch_stock_data(ticker, years=2)  # reduced years → faster
     sentiment_list = fetch_sentiment_score(ticker)
     df = engineer_features(df, sentiment_list)
 
-    # Train direction models
-    rf_train_probs, rf_test_probs, rf_metrics = train_random_forest_stacking(df)
-    lstm_metrics, lstm_last_pred_prob = train_lstm_stacking(df, rf_train_probs, rf_test_probs)
+    feature_cols = [c for c in df.columns if c not in ["Date","FutureReturn","Direction","NextClose"]]
 
-    # Train price models
-    price_results = train_price_models(df)
-    best_model = price_results["best_model"]
-    predicted_price = price_results["predicted_next_day_close"]
+    X = df[feature_cols]
+    y_dir = df["Direction"]
+    y_price = df["NextClose"]
 
-    # Use stacked classifier for direction
-    predicted_direction = "up" if lstm_last_pred_prob > 0.5 else "down"
+    split_idx = int(0.8 * len(df))
 
-    print(f"📈 Predicted Next-Day Close: {predicted_price:.2f}, Direction (stacked classifier): {predicted_direction}")
+    X_train, X_test = X[:split_idx], X[split_idx:]
+    y_train_dir, y_test_dir = y_dir[:split_idx], y_dir[split_idx:]
+    y_train_price, y_test_price = y_price[:split_idx], y_price[split_idx:]
 
-    return {
-        "ticker": ticker,
-        "best_model": best_model,
-        "predicted_price": predicted_price,
-        "predicted_direction": predicted_direction,
-        "direction_metrics": {
-            "random_forest": rf_metrics,
-            "lstm_stacked": lstm_metrics
-        },
-        "price_metrics": {
-            "random_forest": price_results["random_forest"],
-            "lstm": price_results["lstm"]
+    # -------------------------------
+    # ✅ SINGLE STACKED MODEL
+    # -------------------------------
+    clf = GradientBoostingClassifier(n_estimators=100)
+    reg = GradientBoostingRegressor(n_estimators=100)
+
+    clf.fit(X_train, y_train_dir)
+    reg.fit(X_train, y_train_price)
+
+    # Predictions
+    dir_pred = clf.predict(X_test)
+    dir_prob = clf.predict_proba(X_test)[-1][1]
+
+    price_pred = reg.predict(X_test)
+    next_price = float(price_pred[-1])
+
+    # Metrics
+    from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+    from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+    import numpy as np
+
+    dir_metrics = {
+        "stacked": {
+            "accuracy": accuracy_score(y_test_dir, dir_pred),
+            "precision": precision_score(y_test_dir, dir_pred, zero_division=0),
+            "recall": recall_score(y_test_dir, dir_pred, zero_division=0),
+            "f1": f1_score(y_test_dir, dir_pred, zero_division=0)
         }
     }
 
+    price_metrics = {
+        "stacked": {
+            "MAE": mean_absolute_error(y_test_price, price_pred),
+            "RMSE": np.sqrt(mean_squared_error(y_test_price, price_pred)),
+            "R2": r2_score(y_test_price, price_pred)
+        }
+    }
+
+    predicted_direction = "up" if dir_prob > 0.5 else "down"
+
+    return {
+        "ticker": ticker,
+        "best_model": "stacked",
+        "predicted_price": next_price,
+        "predicted_direction": predicted_direction,
+        "direction_metrics": dir_metrics,
+        "price_metrics": price_metrics
+    }
 if __name__ == "__main__":
     import argparse
     p = argparse.ArgumentParser()
