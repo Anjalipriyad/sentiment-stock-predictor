@@ -32,53 +32,51 @@ import requests
 from backend.app.config import settings
 
 
-def fetch_sentiment_score(ticker: str):
+def fetch_sentiment_timeseries(ticker: str):
     url = "https://newsapi.org/v2/everything"
 
     params = {
-        "q": ticker,
+        "q": f"{ticker} stock",
         "language": "en",
         "sortBy": "publishedAt",
-        "pageSize": 20,
+        "pageSize": 100,
         "apiKey": settings.NEWS_API_KEY
     }
 
     try:
         res = requests.get(url, params=params).json()
-
-        print("🔍 NewsAPI response status:", res.get("status"))
-
         articles = res.get("articles", [])
 
         if not articles:
-            return [[0, 0, 0]] * 3
+            return {}
 
-        headlines = [a.get("title", "") for a in articles]
-
-        # -------- SIMPLE SENTIMENT SCORING --------
+        # simple sentiment lexicon
         pos_words = ["gain", "rise", "up", "positive", "growth", "bull", "surge"]
         neg_words = ["fall", "down", "loss", "negative", "drop", "bear", "decline"]
 
-        score = 0
-        for h in headlines:
-            h = h.lower()
-            score += sum(w in h for w in pos_words)
-            score -= sum(w in h for w in neg_words)
+        daily_scores = {}
 
-        score = score / len(headlines)
+        for a in articles:
+            date = a.get("publishedAt", "")[:10]  # YYYY-MM-DD
+            title = a.get("title", "").lower()
 
-        bullish = max(score, 0)
-        bearish = abs(min(score, 0))
+            score = sum(w in title for w in pos_words) - sum(w in title for w in neg_words)
 
-        vec = [score, bullish, bearish]
+            if date not in daily_scores:
+                daily_scores[date] = []
 
-        print("📊 News sentiment:", vec)
+            daily_scores[date].append(score)
 
-        return [vec, vec, vec]
+        # average per day
+        daily_avg = {d: sum(v)/len(v) for d, v in daily_scores.items()}
+
+        # print("📊 Sample daily sentiment:", list(daily_avg.items())[:5])
+
+        return daily_avg
 
     except Exception as e:
         print("❌ NewsAPI error:", e)
-        return [[0, 0, 0]] * 3
+        return {}
 def get_bert():
     global _tokenizer, _bert_model
 
@@ -126,7 +124,16 @@ def fetch_stock_data(ticker: str, years: int = 3):
     return df
 
 # ---------- Feature engineering ----------
-def engineer_features(df: pd.DataFrame, sentiment_list):
+def engineer_features(df: pd.DataFrame, sentiment_dict):
+    # convert date column
+    df["Date"] = pd.to_datetime(df["Date"])
+    df["date_str"] = df["Date"].dt.strftime("%Y-%m-%d")
+
+# map sentiment per day
+    df["Sentiment"] = df["date_str"].map(sentiment_dict)
+
+# fill missing days
+    df["Sentiment"].fillna(0, inplace=True)
     df["Return1"] = df["Close"].pct_change(1)
     df["Return3"] = df["Close"].pct_change(3)
     df["Volatility3"] = df["Return1"].rolling(3).std()
@@ -150,10 +157,10 @@ def engineer_features(df: pd.DataFrame, sentiment_list):
     df["Momentum"] = df["Close"] / df["MA20"] - 1
     df["VolSpike"] = df["Volume"] / df["Volume"].rolling(5).mean() - 1
 
-    emb_df = pd.DataFrame({f"Sentiment_t{i}_{j}": [emb[j]]*len(df)
-                           for i, emb in enumerate(sentiment_list)
-                           for j in range(len(emb))})
-    df = pd.concat([df.reset_index(drop=True), emb_df.reset_index(drop=True)], axis=1)
+    # emb_df = pd.DataFrame({f"Sentiment_t{i}_{j}": [emb[j]]*len(df)
+    #                        for i, emb in enumerate(sentiment_list)
+    #                        for j in range(len(emb))})
+    # df = pd.concat([df.reset_index(drop=True), emb_df.reset_index(drop=True)], axis=1)
 
     # Direction + Price targets
     df["FutureReturn"] = df["Close"].shift(-3)/df["Close"] - 1
@@ -295,12 +302,13 @@ def run_pipeline_stacked(ticker):
     print(f"\n🚀 Running FAST stacked pipeline for {ticker}...\n")
 
     df = fetch_stock_data(ticker, years=2)  # reduced years → faster
-    sentiment_list = fetch_sentiment_score(ticker)
-    print("📊 Sentiment features:", sentiment_list)
-    df = engineer_features(df, sentiment_list)
+    sentiment_dict = fetch_sentiment_timeseries(ticker)
+    df = engineer_features(df, sentiment_dict)
+    # print("📊 Sentiment features:", sentiment_dict)
+    # df = engineer_features(df, sentiment_list)
 
-    feature_cols = [c for c in df.columns if c not in ["Date","FutureReturn","Direction","NextClose"]]
-
+    # feature_cols = [c for c in df.columns if c not in ["Date","FutureReturn","Direction","NextClose"]]
+    feature_cols = [c for c in df.columns if c not in ["Date","date_str","FutureReturn","Direction","NextClose"]]
     X = df[feature_cols]
     y_dir = df["Direction"]
     y_price = df["NextClose"]
