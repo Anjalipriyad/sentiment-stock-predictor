@@ -6,6 +6,7 @@ Adds minimal extension to predict next-day close using best model.
 """
 
 import os, datetime, numpy as np, pandas as pd, yfinance as yf, feedparser,  joblib
+from urllib import response
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix, mean_absolute_error, mean_squared_error, r2_score
 from sklearn.utils.class_weight import compute_class_weight
@@ -27,7 +28,57 @@ _bert_model = None
 
 _tokenizer = None
 _bert_model = None
+import requests
+from backend.app.config import settings
 
+
+def fetch_sentiment_score(ticker: str):
+    url = "https://newsapi.org/v2/everything"
+
+    params = {
+        "q": ticker,
+        "language": "en",
+        "sortBy": "publishedAt",
+        "pageSize": 20,
+        "apiKey": settings.NEWS_API_KEY
+    }
+
+    try:
+        res = requests.get(url, params=params).json()
+
+        print("🔍 NewsAPI response status:", res.get("status"))
+
+        articles = res.get("articles", [])
+
+        if not articles:
+            return [[0, 0, 0]] * 3
+
+        headlines = [a.get("title", "") for a in articles]
+
+        # -------- SIMPLE SENTIMENT SCORING --------
+        pos_words = ["gain", "rise", "up", "positive", "growth", "bull", "surge"]
+        neg_words = ["fall", "down", "loss", "negative", "drop", "bear", "decline"]
+
+        score = 0
+        for h in headlines:
+            h = h.lower()
+            score += sum(w in h for w in pos_words)
+            score -= sum(w in h for w in neg_words)
+
+        score = score / len(headlines)
+
+        bullish = max(score, 0)
+        bearish = abs(min(score, 0))
+
+        vec = [score, bullish, bearish]
+
+        print("📊 News sentiment:", vec)
+
+        return [vec, vec, vec]
+
+    except Exception as e:
+        print("❌ NewsAPI error:", e)
+        return [[0, 0, 0]] * 3
 def get_bert():
     global _tokenizer, _bert_model
 
@@ -63,10 +114,7 @@ def get_bert_sentiment_features(texts, max_len=32):
     return np.mean(all_embeddings, axis=0) if all_embeddings else np.zeros(768)
 
 
-def fetch_sentiment_score(ticker: str):
-    # ⚡ FAST fallback (no BERT, no API calls)
-    import numpy as np
-    return [np.zeros(10), np.zeros(10), np.zeros(10)]
+
 # ---------- Fetch stock data ----------
 def fetch_stock_data(ticker: str, years: int = 3):
     end = datetime.date.today()
@@ -248,6 +296,7 @@ def run_pipeline_stacked(ticker):
 
     df = fetch_stock_data(ticker, years=2)  # reduced years → faster
     sentiment_list = fetch_sentiment_score(ticker)
+    print("📊 Sentiment features:", sentiment_list)
     df = engineer_features(df, sentiment_list)
 
     feature_cols = [c for c in df.columns if c not in ["Date","FutureReturn","Direction","NextClose"]]

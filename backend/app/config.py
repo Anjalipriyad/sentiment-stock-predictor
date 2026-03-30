@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     API_HOST: str = "0.0.0.0"
     API_PORT: int = 8000
     LOG_LEVEL: str = "info"
-    FINNHUB_API_KEY: str | None = None
+    NEWS_API_KEY: str | None = None
     # -----------------------------
     # Database Configuration
     # -----------------------------
