@@ -7,7 +7,7 @@ Built with:
 * ⚡ FastAPI (Backend)
 * ⚛️ React + Vite (Frontend)
 * 📊 Gradient Boosting (ML Model)
-* 🌐 Finnhub API (Market Data)
+* 🌐 NewsAPI (Market Data)
 
 ---
 
@@ -26,7 +26,7 @@ Built with:
 
 * 📉 Predict next-day stock **price**
 * 📈 Predict stock **direction (UP / DOWN)**
-* ⚡ Fast inference (no heavy deep learning models)
+* ⚡ Fast inference 
 * 📊 Interactive price visualization
 * 🗂️ Prediction history tracking (database)
 * 🔌 REST API with FastAPI
@@ -104,7 +104,7 @@ pip install -r requirements.txt
 Create a `.env` file in the root:
 
 ```env
-FINNHUB_API_KEY=your_finnhub_api_key
+NEWS_API_KEY=---YOUR NEWS API KEY--
 ```
 
 ---
