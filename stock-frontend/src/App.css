@@ -1,42 +1,149 @@
-#root {
-  max-width: 1280px;
+/* App-level layout styles */
+
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(99,102,241,0.18) 0%, transparent 70%),
+    var(--bg-base);
+}
+
+/* ─── Header ────────────────────────────────────────────────────────── */
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4) var(--space-8);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgba(7, 7, 26, 0.8);
+}
+
+.app-logo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  text-decoration: none;
+  color: var(--text-primary);
+}
+
+.app-logo-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: var(--accent-dim);
+  border: 1px solid rgba(99,102,241,0.3);
+  border-radius: var(--radius-md);
+  color: var(--accent-light);
+}
+
+.app-logo-text {
+  font-size: var(--text-lg);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.app-logo-text span {
+  color: var(--accent-light);
+}
+
+.header-tag {
+  font-size: var(--text-xs);
+  font-weight: 500;
+  color: var(--text-muted);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-full);
+}
+
+/* ─── Main Content ──────────────────────────────────────────────────── */
+.app-main {
+  flex: 1;
+  width: 100%;
+  max-width: 900px;
   margin: 0 auto;
-  padding: 2rem;
+  padding: var(--space-12) var(--space-6);
+}
+
+/* ─── Hero Section ──────────────────────────────────────────────────── */
+.hero {
   text-align: center;
+  margin-bottom: var(--space-10);
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
-}
-
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent-light);
+  background: var(--accent-dim);
+  border: 1px solid rgba(99,102,241,0.25);
+  padding: var(--space-1) var(--space-4);
+  border-radius: var(--radius-full);
+  margin-bottom: var(--space-5);
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
+.hero-title {
+  font-size: var(--text-4xl);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  margin-bottom: var(--space-4);
+  color: var(--text-primary);
 }
 
-.card {
-  padding: 2em;
+.hero-title span {
+  background: linear-gradient(135deg, var(--accent-light), #c084fc);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
-.read-the-docs {
-  color: #888;
+.hero-sub {
+  font-size: var(--text-base);
+  color: var(--text-secondary);
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+/* ─── Error banner ──────────────────────────────────────────────────── */
+.error-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  background: var(--down-dim);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  color: var(--down);
+  font-size: var(--text-sm);
+  margin-bottom: var(--space-4);
+}
+
+/* ─── Back button row ───────────────────────────────────────────────── */
+.back-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-8);
+  flex-wrap: wrap;
+  gap: var(--space-4);
+}
+
+@media (max-width: 640px) {
+  .app-header { padding: var(--space-3) var(--space-4); }
+  .app-main   { padding: var(--space-8) var(--space-4); }
+  .hero-title { font-size: var(--text-3xl); }
 }
