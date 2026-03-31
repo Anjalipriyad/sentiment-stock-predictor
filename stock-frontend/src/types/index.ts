@@ -37,9 +37,15 @@ export interface PredictionResult {
 // ---------- 2️⃣ Historical Data ----------
 export interface HistoricalPrice {
   date: string;
+  open: number;
+  high: number;
+  low: number;
   close: number;
+  volume: number;
   predicted?: boolean; // optional, true for predicted points
 }
+
+
 
 // ---------- 3️⃣ API Response Types ----------
 export interface PredictionApiResponse {

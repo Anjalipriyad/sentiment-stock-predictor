@@ -29,7 +29,9 @@ class Settings(BaseSettings):
     # External API Keys
     # -----------------------------
     NEWS_API_KEY: str | None = None
+    FINNHUB_API_KEY: str | None = None
     TWITTER_BEARER_TOKEN: str | None = None
+
     ALPHA_VANTAGE_KEY: str | None = None
 
     # -----------------------------

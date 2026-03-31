@@ -1,13 +1,65 @@
 import axios from "axios";
+import { type HistoricalPrice } from "../types";
 
-// ---------- Static ticker list ----------
-export const getAllTickers = (): string[] => [
-  "AAPL","MSFT","GOOGL","AMZN","TSLA","META","NVDA","JPM","V","JNJ",
-  "WMT","PG","DIS","MA","HD","BAC","XOM","KO","PFE","CSCO",
-  "INTC","VZ","CVX","ADBE","NFLX","T","MRK","PEP","ABBV","CRM",
-  "NKE","ORCL","ABT","ACN","LLY","AVGO","COST","QCOM","MDT","MCD",
-  "TXN","NEE","UNH","HON","DHR","LIN","AMGN","BMY","SBUX","TMUS"
+
+export interface TickerInfo {
+  ticker: string;
+  name: string;
+}
+
+export const getAllTickers = (): TickerInfo[] => [
+  { ticker: "AAPL", name: "Apple Inc." },
+  { ticker: "MSFT", name: "Microsoft Corp." },
+  { ticker: "GOOGL", name: "Alphabet Inc." },
+  { ticker: "AMZN", name: "Amazon.com Inc." },
+  { ticker: "TSLA", name: "Tesla Inc." },
+  { ticker: "META", name: "Meta Platforms Inc." },
+  { ticker: "NVDA", name: "NVIDIA Corp." },
+  { ticker: "JPM", name: "JPMorgan Chase & Co." },
+  { ticker: "V", name: "Visa Inc." },
+  { ticker: "JNJ", name: "Johnson & Johnson" },
+  { ticker: "WMT", name: "Walmart Inc." },
+  { ticker: "PG", name: "Procter & Gamble Co." },
+  { ticker: "DIS", name: "Walt Disney Co." },
+  { ticker: "MA", name: "Mastercard Inc." },
+  { ticker: "HD", name: "Home Depot Inc." },
+  { ticker: "BAC", name: "Bank of America Corp." },
+  { ticker: "XOM", name: "Exxon Mobil Corp." },
+  { ticker: "KO", name: "Coca-Cola Co." },
+  { ticker: "PFE", name: "Pfizer Inc." },
+  { ticker: "CSCO", name: "Cisco Systems Inc." },
+  { ticker: "INTC", name: "Intel Corp." },
+  { ticker: "VZ", name: "Verizon Communications Inc." },
+  { ticker: "CVX", name: "Chevron Corp." },
+  { ticker: "ADBE", name: "Adobe Inc." },
+  { ticker: "NFLX", name: "Netflix Inc." },
+  { ticker: "T", name: "AT&T Inc." },
+  { ticker: "MRK", name: "Merck & Co. Inc." },
+  { ticker: "PEP", name: "PepsiCo Inc." },
+  { ticker: "ABBV", name: "AbbVie Inc." },
+  { ticker: "CRM", name: "Salesforce Inc." },
+  { ticker: "NKE", name: "NIKE Inc." },
+  { ticker: "ORCL", name: "Oracle Corp." },
+  { ticker: "ABT", name: "Abbott Laboratories" },
+  { ticker: "ACN", name: "Accenture plc" },
+  { ticker: "LLY", name: "Eli Lilly & Co." },
+  { ticker: "AVGO", name: "Broadcom Inc." },
+  { ticker: "COST", name: "Costco Wholesale Corp." },
+  { ticker: "QCOM", name: "Qualcomm Inc." },
+  { ticker: "MDT", name: "Medtronic plc" },
+  { ticker: "MCD", name: "McDonald's Corp." },
+  { ticker: "TXN", name: "Texas Instruments Inc." },
+  { ticker: "NEE", name: "NextEra Energy Inc." },
+  { ticker: "UNH", name: "UnitedHealth Group Inc." },
+  { ticker: "HON", name: "Honeywell International Inc." },
+  { ticker: "DHR", name: "Danaher Corp." },
+  { ticker: "LIN", name: "Linde plc" },
+  { ticker: "AMGN", name: "Amgen Inc." },
+  { ticker: "BMY", name: "Bristol-Myers Squibb Co." },
+  { ticker: "SBUX", name: "Starbucks Corp." },
+  { ticker: "TMUS", name: "T-Mobile US Inc." }
 ];
+
 
 // ---------- Prediction Result Type ----------
 // ---------- Prediction Result Type ----------
@@ -38,6 +90,13 @@ export interface PredictionResult {
   };
 }
 
+export interface NewsArticle {
+  title: string;
+  link: string;
+  published: string;
+}
+
+
 
 const BASE_URL = "http://localhost:8000";
 
@@ -62,3 +121,38 @@ export const fetchPredictionHistory = async (ticker: string): Promise<Prediction
     throw new Error(err.response?.data?.detail || "Failed to fetch prediction history");
   }
 };
+
+// ---------- Fetch News ----------
+export const fetchNews = async (ticker: string): Promise<NewsArticle[]> => {
+  try {
+    const response = await axios.get(`${BASE_URL}/fetch/news/${ticker}`);
+    return response.data.news as NewsArticle[];
+  } catch (err: any) {
+    console.error("Error fetching news:", err);
+    return [];
+  }
+};
+
+// ---------- Fetch Actual OHLC History ----------
+export const fetchActualHistory = async (ticker: string): Promise<HistoricalPrice[]> => {
+  try {
+    const response = await axios.get(`${BASE_URL}/fetch/${ticker}`);
+    const data = (response.data || []) as any[];
+    // Filter out the last 6 days for a cleaner view (the user mentioned "not dramatic")
+    return data.slice(-6).map((item) => ({
+      date: item.Date || item.date || new Date().toISOString(),
+      open: item.Open ?? item.open ?? 0,
+      high: item.High ?? item.high ?? 0,
+      low: item.Low ?? item.low ?? 0,
+      close: item.Close ?? item.close ?? 0,
+      volume: item.Volume ?? item.volume ?? 0,
+      predicted: false
+    })) as HistoricalPrice[];
+  } catch (err: any) {
+    console.error("Error fetching actual history:", err);
+    return [];
+  }
+};
+
+
+

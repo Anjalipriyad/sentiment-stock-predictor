@@ -11,6 +11,17 @@ Built with:
 
 ---
 
+## 📸 Screenshots
+
+### 🔍 Search & Select
+![Search Stock](screenshots/search.png)
+
+### 📊 Professional Analysis Dashboard
+![Results Chart](screenshots/results.png)
+
+---
+
+
 ## 🚀 Features
 
 * 📉 Predict next-day stock **price**
@@ -68,7 +79,7 @@ sentiment-stock-predictor/
 ### 1️⃣ Clone the Repository
 
 ```bash
-git clone https://github.com/your-username/sentiment-stock-predictor.git
+git clone https://github.com/anjalipriyad/sentiment-stock-predictor.git
 cd sentiment-stock-predictor
 ```
 
@@ -231,8 +242,7 @@ B.Tech IT | Full Stack + ML
 Pull requests are welcome. For major changes, please open an issue first.
 
 
-<img width="902" height="841" alt="image" src="https://github.com/user-attachments/assets/d4806af2-3413-4281-ad89-dbe8176f494e" />
-<img width="710" height="872" alt="image" src="https://github.com/user-attachments/assets/40bab3a9-c6e0-47e5-9b0a-7cb3356d1a44" />
+
 
 
 

@@ -14,35 +14,62 @@ router = APIRouter(
 )
 
 @router.get("/{ticker}")
-
-
-
 def fetch_stock_data(ticker: str, years=2):
-    url = "https://finnhub.io/api/v1/stock/candle"
 
-    params = {
-        "symbol": ticker,
-        "resolution": "D",
-        "count": 500,
-        "token": settings.FINNHUB_API_KEY  # ✅ from .env
-    }
+    """
+    Fetch historical stock data. Primary: Finnhub, Fallback: yfinance.
+    """
+    # 1. Try Finnhub (requires API key)
+    if settings.FINNHUB_API_KEY:
+        try:
+            url = "https://finnhub.io/api/v1/stock/candle"
+            params = {
+                "symbol": ticker,
+                "resolution": "D",
+                "count": 500,
+                "token": settings.FINNHUB_API_KEY
+            }
+            response = requests.get(url, params=params)
+            data = response.json()
+            if data.get("s") == "ok":
+                df = pd.DataFrame({
+                    "Date": pd.to_datetime(data["t"], unit="s").strftime("%Y-%m-%d"),
+                    "Open": data["o"],
+                    "High": data["h"],
+                    "Low": data["l"],
+                    "Close": data["c"],
+                    "Volume": data["v"]
+                })
+                # FastAPI cannot serialize DataFrames directly, must convert to dict
+                return df.to_dict(orient="records")
 
-    response = requests.get(url, params=params)
-    data = response.json()
+        except Exception as e:
+            print(f"Finnhub error for {ticker}: {e}")
 
-    if data.get("s") != "ok":
-        raise Exception(f"Finnhub error: {data}")
+    # 2. Fallback to yfinance (free, reliable, no key needed)
+    try:
+        data = yf.download(ticker, period=f"{years}y", interval="1d")
+        if data.empty:
+            raise Exception("No data returned from yfinance")
+        
+        # Reset index to make Date a column
+        df = data.reset_index()
+        
+        # FastAPI/JSON cannot serialize pandas Timestamp objects, must convert to string
+        if "Date" in df.columns:
+            df["Date"] = df["Date"].dt.strftime("%Y-%m-%d")
+            
+        # Ensure column names are clean (yfinance sometimes adds multi-index levels)
+        if isinstance(df.columns, pd.MultiIndex):
+            df.columns = df.columns.get_level_values(0)
 
-    df = pd.DataFrame({
-        "Date": pd.to_datetime(data["t"], unit="s"),
-        "Open": data["o"],
-        "High": data["h"],
-        "Low": data["l"],
-        "Close": data["c"],
-        "Volume": data["v"]
-    })
+        return df.to_dict(orient="records")
+    except Exception as e:
+        print(f"yfinance error for {ticker}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to fetch stock data: {str(e)}")
 
-    return df
+
+@router.get("/news/{ticker}")
 async def fetch_news(ticker: str, count: int = 10):
     """
     Fetch latest news headlines for a ticker using Google News RSS feed.

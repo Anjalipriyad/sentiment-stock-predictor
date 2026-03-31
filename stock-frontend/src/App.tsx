@@ -4,7 +4,7 @@ import { TrendingUp, AlertCircle, RotateCcw } from "lucide-react";
 import TickerSelect from "./components/TickerSelect";
 import PredictionResult from "./components/PredictionResult";
 import type { PredictionResult as PredictionResultType } from "./api/stockApi";
-import { fetchPredictionHistory } from "./api/stockApi";
+import { fetchActualHistory } from "./api/stockApi";
 import type { HistoricalPrice } from "./types";
 import "./App.css";
 
@@ -27,28 +27,55 @@ const App: React.FC = () => {
     setError(null);
 
     try {
-      const history: PredictionResultType[] = await fetchPredictionHistory(pred.ticker);
+      const actualHistory = await fetchActualHistory(pred.ticker);
+      
+      // If we have actual history, use it. Append the prediction as the last "candle"
+      if (actualHistory.length > 0) {
+        const lastActual = actualHistory[actualHistory.length - 1];
+        const nextDate = new Date(lastActual.date);
+        nextDate.setDate(nextDate.getDate() + 1);
 
-      const historical: HistoricalPrice[] = (history || []).map((item) => ({
-        date: item.created_at || new Date().toISOString(),
-        close: item.predicted_price ?? 0,
-        predicted: false,
-      }));
-
-      const lastDate = new Date(historical[historical.length - 1]?.date || new Date());
-      lastDate.setDate(lastDate.getDate() + 1);
-      historical.push({
-        date: lastDate.toISOString().split("T")[0],
-        close: pred.predicted_price ?? 0,
-        predicted: true,
-      });
-
-      setHistoricalData(historical);
+        const fullHistory: HistoricalPrice[] = [
+          ...actualHistory,
+          {
+            date: nextDate.toISOString().split("T")[0],
+            open: lastActual.close, // Start next candle at last close
+            high: Math.max(lastActual.close, pred.predicted_price), 
+            low: Math.min(lastActual.close, pred.predicted_price),
+            close: pred.predicted_price,
+            volume: 0,
+            predicted: true
+          }
+        ];
+        setHistoricalData(fullHistory);
+      } else {
+        // Fallback if no actual history
+        setHistoricalData([
+          { 
+            date: new Date().toISOString(), 
+            open: pred.predicted_price, 
+            high: pred.predicted_price, 
+            low: pred.predicted_price, 
+            close: pred.predicted_price, 
+            volume: 0,
+            predicted: true 
+          },
+        ]);
+      }
     } catch (err: any) {
       setError(err.message || "Failed to fetch historical data");
       setHistoricalData([
-        { date: new Date().toISOString(), close: pred.predicted_price ?? 0, predicted: true },
+        { 
+          date: new Date().toISOString(), 
+          open: pred.predicted_price, 
+          high: pred.predicted_price, 
+          low: pred.predicted_price, 
+          close: pred.predicted_price, 
+          volume: 0,
+          predicted: true 
+        },
       ]);
+
     } finally {
       setLoadingHistory(false);
     }
@@ -88,16 +115,13 @@ const App: React.FC = () => {
             >
               {/* Hero */}
               <div className="hero">
-                <div className="hero-eyebrow">
-                  <TrendingUp size={12} />
-                  Machine Learning · LSTM · Random Forest
-                </div>
+
                 <h1 className="hero-title">
                   Predict Tomorrow's<br />
                   <span>Stock Price</span>
                 </h1>
                 <p className="hero-sub">
-                  Select a ticker to get an AI-powered next-day price prediction with confidence metrics.
+                  Select a company to get an AI-powered next-day price prediction with confidence metrics.
                 </p>
               </div>
 

@@ -1,37 +1,41 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
-import { Search, Loader2, AlertCircle, ChevronRight } from "lucide-react";
-import { getAllTickers, fetchPrediction } from "../api/stockApi";
-import type { PredictionResult } from "../api/stockApi";
+import { Search, Loader2, AlertCircle, ChevronRight, Building2 } from "lucide-react";
+import { getAllTickers, fetchPrediction, type TickerInfo, type PredictionResult } from "../api/stockApi";
 
 interface TickerSelectProps {
   onPredictionFetched: (prediction: PredictionResult) => void;
 }
 
-const containerVariants: Variants = {
-  hidden: {},
+const listVariants: Variants = {
+  hidden: { opacity: 0 },
   show: {
-    transition: { staggerChildren: 0.03 },
+    opacity: 1,
+    transition: { staggerChildren: 0.05 },
   },
 };
 
 const itemVariants: Variants = {
-  hidden: { opacity: 0, scale: 0.9 },
-  show:   { opacity: 1, scale: 1, transition: { type: "spring" as const, stiffness: 300, damping: 24 } },
+  hidden: { opacity: 0, x: -10 },
+  show:   { opacity: 1, x: 0, transition: { type: "spring", stiffness: 300, damping: 24 } },
 };
 
 const TickerSelect: React.FC<TickerSelectProps> = ({ onPredictionFetched }) => {
   const allTickers = getAllTickers();
   const [search, setSearch] = useState<string>("");
-  const [filteredTickers, setFilteredTickers] = useState<string[]>(allTickers);
+  const [filteredTickers, setFilteredTickers] = useState<TickerInfo[]>(allTickers);
   const [selectedTicker, setSelectedTicker] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.toUpperCase();
+    const value = e.target.value.toLowerCase();
     setSearch(value);
-    setFilteredTickers(allTickers.filter((ticker) => ticker.includes(value)));
+    setFilteredTickers(
+      allTickers.filter(
+        (t) => t.ticker.toLowerCase().includes(value) || t.name.toLowerCase().includes(value)
+      )
+    );
   };
 
   const handleSelect = async (ticker: string) => {
@@ -48,20 +52,18 @@ const TickerSelect: React.FC<TickerSelectProps> = ({ onPredictionFetched }) => {
     }
   };
 
-  const visible = filteredTickers.slice(0, 24);
-
   return (
     <motion.div
       className="card"
-      style={{ padding: "var(--space-6)" }}
+      style={{ padding: "var(--space-4)", maxWidth: "600px", margin: "0 auto" }}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, ease: "easeOut" }}
     >
       {/* Search Input */}
-      <div style={{ position: "relative", marginBottom: "var(--space-5)" }}>
+      <div style={{ position: "relative", marginBottom: "var(--space-3)" }}>
         <Search
-          size={16}
+          size={18}
           style={{
             position: "absolute",
             left: "var(--space-4)",
@@ -73,93 +75,126 @@ const TickerSelect: React.FC<TickerSelectProps> = ({ onPredictionFetched }) => {
         />
         <input
           type="text"
-          placeholder="Search ticker symbol…"
+          placeholder="Search by company name or ticker…"
           value={search}
           onChange={handleSearchChange}
+          style={{ paddingLeft: "3.25rem", height: "48px" }}
           autoFocus
         />
       </div>
 
       {/* Count label */}
-      <p style={{ fontSize: "var(--text-xs)", color: "var(--text-muted)", marginBottom: "var(--space-4)" }}>
-        {filteredTickers.length} ticker{filteredTickers.length !== 1 ? "s" : ""} available
-        {search && ` for "${search}"`}
+      <p style={{ fontSize: "var(--text-xs)", color: "var(--text-muted)", marginBottom: "var(--space-4)", fontWeight: 500 }}>
+        {filteredTickers.length} companies available
+        {search && ` matching "${search}"`}
       </p>
 
-      {/* Ticker Grid */}
+      {/* Scrolling List */}
       <motion.div
         key={search}
-        variants={containerVariants}
+        variants={listVariants}
         initial="hidden"
         animate="show"
         style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(88px, 1fr))",
-          gap: "var(--space-2)",
-          maxHeight: "320px",
+          display: "flex",
+          flexDirection: "column",
+          gap: "var(--space-1)",
+          maxHeight: "300px",
           overflowY: "auto",
-          paddingRight: "var(--space-1)",
+          paddingRight: "var(--space-2)",
+          marginRight: "calc(-1 * var(--space-2))",
         }}
       >
-        {visible.map((ticker) => {
-          const isSelected = selectedTicker === ticker;
+        {filteredTickers.map((t) => {
+          const isSelected = selectedTicker === t.ticker;
           const isLoading  = isSelected && loading;
           return (
             <motion.button
-              key={ticker}
+              key={t.ticker}
               variants={itemVariants}
-              onClick={() => handleSelect(ticker)}
+              onClick={() => handleSelect(t.ticker)}
               disabled={loading}
-              className="card-hover"
+              className="ticker-list-item"
               style={{
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
-                padding: "var(--space-3) var(--space-3)",
+                padding: "var(--space-3) var(--space-4)",
                 borderRadius: "var(--radius-md)",
-                border: isSelected
-                  ? "1px solid rgba(99,102,241,0.6)"
-                  : "1px solid var(--border)",
-                background: isSelected ? "var(--accent-dim)" : "var(--bg-card)",
-                color: isSelected ? "var(--accent-light)" : "var(--text-primary)",
-                fontSize: "var(--text-sm)",
-                fontWeight: isSelected ? 700 : 500,
+                border: "1px solid transparent",
+                background: isSelected ? "var(--accent-dim)" : "transparent",
                 cursor: loading ? "not-allowed" : "pointer",
-                opacity: loading && !isSelected ? 0.5 : 1,
-                transition: "all 0.15s ease",
+                textAlign: "left",
+                width: "100%",
+                transition: "all 0.2s ease",
               }}
-              whileHover={!loading ? { scale: 1.04 } : {}}
-              whileTap={!loading  ? { scale: 0.97 } : {}}
             >
-              {ticker}
-              {isLoading ? (
-                <Loader2 size={12} style={{ animation: "spin 1s linear infinite" }} />
-              ) : isSelected ? (
-                <ChevronRight size={12} />
-              ) : null}
+              <div style={{ display: "flex", alignItems: "center", gap: "var(--space-3)" }}>
+                <div style={{
+                  width: "32px",
+                  height: "32px",
+                  borderRadius: "var(--radius-sm)",
+                  background: isSelected ? "rgba(99,102,241,0.2)" : "rgba(255,255,255,0.03)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: isSelected ? "var(--accent-light)" : "var(--text-muted)",
+                  flexShrink: 0
+                }}>
+                  <Building2 size={16} />
+                </div>
+                <div style={{ display: "flex", flexDirection: "column" }}>
+                  <span style={{
+                    fontSize: "var(--text-sm)",
+                    fontWeight: 600,
+                    color: isSelected ? "var(--accent-light)" : "var(--text-primary)"
+                  }}>
+                    {t.name}
+                  </span>
+                  <span style={{ fontSize: "var(--text-xs)", color: "var(--text-muted)" }}>
+                    {t.ticker}
+                  </span>
+                </div>
+              </div>
+              
+              <div style={{ color: isSelected ? "var(--accent-light)" : "var(--text-muted)" }}>
+                {isLoading ? (
+                  <Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} />
+                ) : (
+                  <ChevronRight size={16} />
+                )}
+              </div>
             </motion.button>
           );
         })}
+        {filteredTickers.length === 0 && (
+          <div style={{ padding: "var(--space-8)", textAlign: "center", color: "var(--text-muted)" }}>
+            No companies found matching your search.
+          </div>
+        )}
       </motion.div>
 
-      {/* Loading state full-card overlay message */}
+      {/* Loading state message */}
       <AnimatePresence>
         {loading && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
             style={{
+              overflow: "hidden",
               display: "flex",
               alignItems: "center",
               gap: "var(--space-3)",
-              marginTop: "var(--space-5)",
+              marginTop: "var(--space-3)",
               color: "var(--accent-light)",
               fontSize: "var(--text-sm)",
+              paddingTop: "var(--space-4)",
+              borderTop: "1px solid var(--border)"
             }}
           >
             <Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} />
-            Fetching prediction for <strong>{selectedTicker}</strong>…
+            Fetching prediction for <strong>{allTickers.find(t => t.ticker === selectedTicker)?.name}</strong>…
           </motion.div>
         )}
       </AnimatePresence>
@@ -180,9 +215,12 @@ const TickerSelect: React.FC<TickerSelectProps> = ({ onPredictionFetched }) => {
         )}
       </AnimatePresence>
 
-      {/* Spinner keyframe */}
       <style>{`
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .ticker-list-item:hover {
+          background: rgba(255,255,255,0.03) !important;
+          border-color: var(--border) !important;
+        }
       `}</style>
     </motion.div>
   );
